@@ -24,7 +24,7 @@ const initialFriends = [
 export default function App() {
   const [showAddFriend, setShowAddFriend] = useState(false);
   const [friends, setFriends] = useState(initialFriends);
-  const [spiltBill, setSpiltBill] = useState(null);
+  const [selectedFriend, setSelectedFriend] = useState(null);
 
   function handleSetShowAddFriend() {
     setShowAddFriend(!showAddFriend);
@@ -35,29 +35,34 @@ export default function App() {
     setShowAddFriend(false);
   }
 
-  function handlespiltBillForm(friend) {
-    setSpiltBill(friend);
+  function handleSelection(friend) {
+    setSelectedFriend((current) => (friend.id === current?.id ? null : friend));
+    setShowAddFriend(false);
   }
 
   function handleRebalance(friend) {
     setFriends(friend);
-    setSpiltBill(null);
+    setSelectedFriend(null);
   }
 
   return (
     <div className="app">
       <div className="sidebar">
-        <FriendList friends={friends} onSpiltBillFormOn={handlespiltBillForm} />
+        <FriendList
+          friends={friends}
+          handleSelection={handleSelection}
+          selectedFriend={selectedFriend}
+        />
         {showAddFriend && <FormAddFriend onAddFriend={handleAddFriend} />}
         <Button onClick={handleSetShowAddFriend}>
           {showAddFriend ? "Close" : "Add friend"}
         </Button>
       </div>
       <div>
-        {spiltBill && (
+        {selectedFriend && (
           <FormSplitBill
-            friend={spiltBill}
-            onSpiltBill={setSpiltBill}
+            friend={selectedFriend}
+            onSpiltBill={selectedFriend}
             onRebalance={handleRebalance}
             friends={friends}
           />
@@ -67,7 +72,7 @@ export default function App() {
   );
 }
 
-function FriendList({ friends, onSpiltBillFormOn }) {
+function FriendList({ friends, handleSelection, selectedFriend }) {
   return (
     <ul>
       {friends.map((friend) => (
@@ -75,7 +80,8 @@ function FriendList({ friends, onSpiltBillFormOn }) {
           <Friend
             friend={friend}
             key={friend.id}
-            onSpiltBillFormOn={onSpiltBillFormOn}
+            handleSelection={handleSelection}
+            selectedFriend={selectedFriend}
           />
         </ul>
       ))}
@@ -83,9 +89,11 @@ function FriendList({ friends, onSpiltBillFormOn }) {
   );
 }
 
-function Friend({ friend, onSpiltBillFormOn }) {
+function Friend({ friend, handleSelection, selectedFriend }) {
+  const isSelected = selectedFriend?.id === friend.id;
+  // alert(selectedFriend.id);
   return (
-    <li key={friend.id}>
+    <li key={friend.id} className={isSelected ? "selected" : ""}>
       <img src={friend.image} alt={friend.name} />
       <h3>{friend.name}</h3>
       {friend.balance === 0 && <p>{`You and ${friend.name} are even`}</p>}
@@ -99,7 +107,9 @@ function Friend({ friend, onSpiltBillFormOn }) {
           friend.balance
         )}`}</p>
       )}
-      <Button onClick={() => onSpiltBillFormOn(friend)}>Select</Button>
+      <Button onClick={() => handleSelection(friend)}>
+        {isSelected ? "Close" : "Select"}
+      </Button>
     </li>
   );
 }
@@ -167,6 +177,7 @@ function FormSplitBill({ friend, onRebalance, friends }) {
   }
   function handleSubmit(e) {
     e.preventDefault();
+
     const newBalance =
       spender === "user"
         ? friend.balance + totalExpense - userExpense
@@ -195,7 +206,7 @@ function FormSplitBill({ friend, onRebalance, friends }) {
         value={totalExpense}
         onChange={(e) => handleTotalExpense(e.target.value)}
       />
-      ~<label>{`🧍‍♂️Your expense`}</label>
+      <label>{`🧍‍♂️Your expense`}</label>
       <input
         type="text"
         value={userExpense}
